@@ -9,9 +9,12 @@ plugins/*
 themes/*
 !themes/default/
 !themes/README.md
-.project
+.env
+.idea
 .buildpath
+.project
 .settings/
 .svn/
 vendor/
+composer.phar
 composer.lock
