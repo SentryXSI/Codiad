@@ -271,15 +271,18 @@ class Filemanager extends Common
 
     public function open()
     {
-        if (is_file($this->path)) {
+        if (is_file($this->path))
+        {
             $output = file_get_contents($this->path);
             
-            if (extension_loaded('mbstring')) {
+            if (extension_loaded('mbstring'))
+            {
                 if (!mb_check_encoding($output, 'UTF-8')) {
                     if (mb_check_encoding($output, 'ISO-8859-1')) {
                         $output = utf8_encode($output);
                     } else {
-                        $output = mb_convert_encoding($content, 'UTF-8');
+                        //$output = mb_convert_encoding($content, 'UTF-8');
+                        $output = mb_convert_encoding($output, 'UTF-8');
                     }
                 }
             }
@@ -302,7 +305,11 @@ class Filemanager extends Common
 
     public function openinbrowser()
     {
-        $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')
+            || $_SERVER['SERVER_PORT'] == 443)
+            ? "https://"
+            : "http://";
+
         $domainName = $_SERVER['HTTP_HOST'];
         $url =  $protocol.WSURL.'/'.$this->rel_path;
         $this->status = "success";
@@ -316,11 +323,13 @@ class Filemanager extends Common
 
     public function create()
     {
-
         // Create file
-        if ($this->type=="file") {
-            if (!file_exists($this->path)) {
-                if ($file = fopen($this->path, 'w')) {
+        if( $this->type == "file" )
+        {
+            if( ! file_exists($this->path))
+            {
+                if( $file = fopen( $this->path, 'w' ) )
+                {
                     // Write content
                     if ($this->content) {
                         fwrite($file, $this->content);
@@ -339,7 +348,8 @@ class Filemanager extends Common
         }
 
         // Create directory
-        if ($this->type=="directory") {
+        if ($this->type=="directory")
+        {
             if (!is_dir($this->path)) {
                 mkdir($this->path);
                 $this->status = "success";
@@ -450,9 +460,10 @@ class Filemanager extends Common
                         return;
                     }
     
-                    if ($file = fopen($this->path, 'w')) {
+                    if ($file = fopen($this->path, 'w'))
+                    {
                         if ($this->patch) {
-                            $dmp = new diff_match_patch();
+                            $dmp = new Lib\diff_match_patch();
                             $p = $dmp->patch_apply($dmp->patch_fromText($this->patch), $fileContents);
                             $this->content = $p[0];
                             //DEBUG : file_put_contents($this->path.".orig",$fileContents );

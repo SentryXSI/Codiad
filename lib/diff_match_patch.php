@@ -1,4 +1,6 @@
 <?php
+namespace Lib;
+
 /**
  * Diff Match and Patch
  *
@@ -1928,7 +1930,8 @@ class diff_match_patch {
 	 * @return {Array.<patch_obj>} Array of patch objects.
 	 * @throws {Error} If invalid input.
 	 */
-	function patch_fromText($textline) {
+	function patch_fromText($textline)
+    {
 		$patches = array();
 		if ($textline === '') {
 			return $patches;
@@ -1936,7 +1939,8 @@ class diff_match_patch {
 		$text = explode("\n",$textline);
 		foreach($text as $i=>$t){ if($t===''){ unset($text[$i]); } }
 		$textPointer = 0;
-		while ($textPointer < count($text) ) {
+		while ($textPointer < count($text) )
+        {
 			$m = null;
 			preg_match('/^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@$/',$text[$textPointer],$m);
 			if (!$m) {
@@ -1967,14 +1971,22 @@ class diff_match_patch {
 			}
 			$textPointer++;
 
-			while ($textPointer < count($text) ) {
+			while ($textPointer < count($text) )
+            {
 				$sign = $text[$textPointer][0];
+
 				try {
+
 					$line = decodeURI( mb_substr($text[$textPointer],1) );
-				} catch (Exception $ex) {
+
+				} catch (\Exception $ex) {
+
 					// Malformed URI sequence.
-					throw new Exception('Illegal escape in patch_fromText: ' . $line);
+					throw new \Exception(
+					    'Illegal escape in patch_fromText: ' . $line
+                    );
 				}
+
 				if ($sign == '-') {
 					// Deletion.
 					array_push( $patch->diffs, array(DIFF_DELETE, $line) );
@@ -2004,7 +2016,8 @@ class diff_match_patch {
  * Class representing one patch operation.
  * @constructor
  */
-class patch_obj {
+class patch_obj
+{
 	/** @type {Array.<Array.<number|string>>} */
 	public $diffs = array();
 	/** @type {number?} */
@@ -2022,7 +2035,11 @@ class patch_obj {
 	 * Indicies are printed as 1-based, not 0-based.
 	 * @return {string} The GNU diff string.
 	 */
-	function toString() {
+    /**
+     * @return string
+     */
+	function toString()
+    {
 		if ($this->length1 === 0) {
 			$coords1 = $this->start1 . ',0';
 		} elseif ($this->length1 == 1) {
