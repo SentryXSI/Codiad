@@ -11,13 +11,14 @@
     // Common Class
     //////////////////////////////////////////////////////////////////
 
-    class Common {
+    class Common
+    {
 
         //////////////////////////////////////////////////////////////////
         // PROPERTIES
         //////////////////////////////////////////////////////////////////
 
-        public static $debugMessageStack = array();
+        public static $debugMessageStack = [];
 
         //////////////////////////////////////////////////////////////////
         // METHODS
@@ -29,17 +30,23 @@
         // Construct
         //////////////////////////////////////////////////////////////////
 
-        public static function construct(){
+        public static function construct()
+        {
             global $cookie_lifetime;
-            $path = str_replace("index.php", "", $_SERVER['SCRIPT_FILENAME']);
-            foreach (array("components","plugins") as $folder) {
+
+            $path = str_replace( "index.php", "", $_SERVER['SCRIPT_FILENAME'] );
+
+            foreach([ "components", "plugins" ] as $folder )
+            {
                 if(strpos($_SERVER['SCRIPT_FILENAME'], $folder)) {
                     $path = substr($_SERVER['SCRIPT_FILENAME'],0, strpos($_SERVER['SCRIPT_FILENAME'], $folder));
                     break;
                 }
             }
 
-            if(file_exists($path.'config.php')){ require_once($path.'config.php'); }
+            if( file_exists( $path . 'config.php' ) ) {
+                require_once( $path . 'config.php' );
+            }
 
             if(!defined('BASE_PATH')) {
                 define('BASE_PATH', rtrim(str_replace("index.php", "", $_SERVER['SCRIPT_FILENAME']),"/"));
@@ -74,26 +81,27 @@
         // SESSIONS
         //////////////////////////////////////////////////////////////////
 
-        public static function startSession() {
+        public static function startSession()
+        {
             Common::construct();
 
             global $cookie_lifetime;
-            if(isset($cookie_lifetime) && $cookie_lifetime != "") {
+
+            if( isset( $cookie_lifetime ) && $cookie_lifetime !== "" ) {
                 ini_set("session.cookie_lifetime", $cookie_lifetime);
             }
 
             //Set a Session Name
             session_name(md5(BASE_PATH));
-
             session_start();
             
-            //Check for external authentification
-            if(defined('AUTH_PATH')){
-                require_once(AUTH_PATH);
+            //Check for external authentication
+            if( defined('AUTH_PATH') ) {
+                require_once( AUTH_PATH );
             }
 
             global $lang;
-            if (isset($_SESSION['lang'])) {
+            if( isset($_SESSION['lang'] ) ) {
                 include BASE_PATH."/languages/{$_SESSION['lang']}.php";
             } else {
                 include BASE_PATH."/languages/".LANGUAGE.".php";
@@ -104,10 +112,13 @@
         // Read Content of directory
         //////////////////////////////////////////////////////////////////
         
-        public static function readDirectory($foldername) {
-          $tmp = array();
+        public static function readDirectory($foldername)
+        {
+          $tmp = [];
           $allFiles = scandir($foldername);
-          foreach ($allFiles as $fname){
+
+          foreach ($allFiles as $fname)
+          {
               if($fname == '.' || $fname == '..' ){
                   continue;
               }
@@ -140,16 +151,23 @@
         // Localization
         //////////////////////////////////////////////////////////////////
 
-        public static function i18n($key, $args = array()) {
+        public static function i18n($key, $args = []) {
             echo Common::get_i18n($key, $args);
         }
 
-        public static function get_i18n($key, $args = array()) {
+        public static function get_i18n($key, $args = [])
+        {
             global $lang;
-            $key = ucwords(strtolower($key)); //Test, test TeSt and tESt are exacly the same
+
+            //Test, test TeSt and tESt are exacly the same
+            $key    = ucwords(strtolower($key));
+
             $return = isset($lang[$key]) ? $lang[$key] : $key;
-            foreach($args as $k => $v)
+
+            foreach( $args as $k => $v ) {
                 $return = str_replace("%{".$k."}%", $v, $return);
+            }
+
             return $return;
         }
 
@@ -159,7 +177,7 @@
 
         public static function checkSession(){
             // Set any API keys
-            $api_keys = array();
+            $api_keys = [];
             // Check API Key or Session Authentication
             $key = "";
             if(isset($_GET['key'])){ $key = $_GET['key']; }
@@ -168,71 +186,122 @@
             }
         }
 
-        //////////////////////////////////////////////////////////////////
-        // Get JSON
-        //////////////////////////////////////////////////////////////////
-
-        public static function getJSON($file,$namespace=""){
+        /**---------------------------------------------------------------------
+         *
+         * Get JSON
+         *
+         * ---------------------------------------------------------------------
+         *
+         * @param $file
+         * @param string $namespace
+         * @return false|mixed|string
+         */
+        public static function getJSON( $file, $namespace = "" )
+        {
             $path = DATA . "/";
-            if($namespace != ""){
+
+            if( $namespace !== "" ){
                 $path = $path . $namespace . "/";
                 $path = preg_replace('#/+#','/',$path);
             }
 
-            $json = file_get_contents($path . $file);
+            $json = file_get_contents( $path . $file );
             $json = str_replace(["\n\r", "\r", "\n"], "", $json);
             $json = str_replace("|*/?>","",str_replace("<?php/*|","",$json));
             $json = json_decode($json,true);
+
             return $json;
         }
 
-        //////////////////////////////////////////////////////////////////
-        // Save JSON
-        //////////////////////////////////////////////////////////////////
-
-        public static function saveJSON($file,$data,$namespace=""){
+        /**---------------------------------------------------------------------
+         *
+         * Save Json
+         *
+         * ---------------------------------------------------------------------
+         *
+         * @param $file
+         * @param $data
+         * @param string $namespace
+         * @throws Exception
+         */
+        public static function saveJSON( $file, $data, $namespace = "" )
+        {
             $path = DATA . "/";
-            if($namespace != ""){
+
+            if( $namespace !== "" )
+            {
                 $path = $path . $namespace . "/";
-                $path = preg_replace('#/+#','/',$path);
-                if(!is_dir($path)) mkdir($path);
+                $path = \preg_replace('#/+#' ,'/', $path);
+
+                if( ! \is_dir( $path ) )
+                {
+                    if( ! @\mkdir( $path ) )
+                    {
+                        throw new \Exception(
+                            'Common Error :: saveJson() - '
+                            . 'Unable to create directory ( '
+                            . $path
+                            . ' )'
+                        );
+                    }
+                }
             }
 
-            $data = "<?php\r\n/*|" . json_encode($data) . "|*/\r\n?>";
-            $write = fopen($path . $file, 'w') or die("can't open file ".$path.$file);
-            fwrite($write, $data);
-            fclose($write);
+            $data = "<?php\r\n/*|" . \json_encode( $data ) . "|*/\r\n?>";
+
+            $spl = new \SplFileObject( $path . $file, 'w+b');
+
+            if( ! $spl->fwrite( $data ) )
+            {
+                throw new \Exception(
+                    'Common Error :: saveJson() - '
+                    . 'Unable to save file ( '
+                    . $path
+                    . ' )'
+                );
+            }
+
+            $spl = null;
         }
 
-        //////////////////////////////////////////////////////////////////
-        // Format JSEND Response
-        //////////////////////////////////////////////////////////////////
-
-        public static function formatJSEND($status,$data=false){
-
+        /**---------------------------------------------------------------------
+         *
+         * Format JSEND
+         *
+         * ---------------------------------------------------------------------
+         *
+         * Format JSEND Response
+         *
+         * @param $status
+         * @param bool $data
+         * @return string
+         */
+        public static function formatJSEND($status,$data=false)
+        {
             /// Debug /////////////////////////////////////////////////
             $debug = "";
-            if(count(Common::$debugMessageStack) > 0) {
+
+            if( count( Common::$debugMessageStack ) > 0 ) {
                 $debug .= ',"debug":';
                 $debug .= json_encode(Common::$debugMessageStack);
             }
 
             // Success ///////////////////////////////////////////////
-            if($status=="success"){
-                if($data){
+            if( $status === "success" )
+            {
+                if( $data ){
                     $jsend = '{"status":"success","data":'.json_encode($data).$debug.'}';
-                }else{
+                } else {
                     $jsend = '{"status":"success","data":null'.$debug.'}';
                 }
 
             // Error /////////////////////////////////////////////////
-            }else{
+            } else {
                 $jsend = '{"status":"error","message":"'.$data.'"'.$debug.'}';
             }
 
             // Return ////////////////////////////////////////////////
             return $jsend;
-
         }
 
         //////////////////////////////////////////////////////////////////
@@ -243,39 +312,54 @@
             return !file_exists(DATA . "/" . $_SESSION['user'] . '_acl.php');
         }
 
-        //////////////////////////////////////////////////////////////////
-        // Check Path
-        //////////////////////////////////////////////////////////////////
+        /**---------------------------------------------------------------------
+         *
+         * Check Path
+         *
+         * ---------------------------------------------------------------------
+         *
+         * @param $path
+         * @return bool
+         */
+        public static function checkPath( $path )
+        {
+            $user = $_SESSION['user'] . '_acl.php';
+            $file = DATA . "/" . $user;
 
-        public static function checkPath($path) {
-            if(file_exists(DATA . "/" . $_SESSION['user'] . '_acl.php')){
-                foreach (getJSON($_SESSION['user'] . '_acl.php') as $projects=>$data) {
-                    if (strpos($path, $data) === 0) {
+            if( file_exists( $file ) )
+            {
+                foreach( getJSON( $user ) as $projects => $data )
+                {
+                    if( strpos( $path, $data ) === 0 ) {
                         return true;
                     }
                 }
+
             } else {
-                foreach(getJSON('projects.php') as $project=>$data){
-                    if (strpos($path, $data['path']) === 0) {
+
+                foreach( getJSON('projects.php') as $project => $data )
+                {
+                    if( strpos( $path, $data['path'] ) === 0 ) {
                         return true;
                     }
                 }
             }
+
             return false;
         }
-
 
         //////////////////////////////////////////////////////////////////
         // Check Function Availability
         //////////////////////////////////////////////////////////////////
 
-        public static function isAvailable($func) {
-            if (ini_get('safe_mode')) return false;
+        public static function isAvailable($func)
+        {
+            if( ini_get('safe_mode')) return false;
             $disabled = ini_get('disable_functions');
-            if ($disabled) {
+            if( $disabled ) {
                 $disabled = explode(',', $disabled);
                 $disabled = array_map('trim', $disabled);
-                return !in_array($func, $disabled);
+                return ! in_array($func, $disabled);
             }
             return true;
         }
@@ -293,9 +377,8 @@
         //////////////////////////////////////////////////////////////////
 
         public static function isWINOS( ) {
-            return (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
+            return ( strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN' );
         }
-
     }
 
     //////////////////////////////////////////////////////////////////
