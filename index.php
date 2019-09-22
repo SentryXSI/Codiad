@@ -1,10 +1,22 @@
 <?php
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+
+//
+// switch display errors off in production
+//
+if( ! empty( $_SERVER['SERVER_ADDR'] ) )
+{
+    if( ! filter_var( $_SERVER['SERVER_ADDR'], FILTER_VALIDATE_IP | FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_NO_PRIV_RANGE ) ) {
+        ini_set('display_errors', '1');
+        $envMode = 'development';
+    } else {
+        ini_set('display_errors', '0');
+        $envMode ='production';
+    }
+}
 
 require_once('common.php');
-
 
 // Context Menu
 $context_menu = file_get_contents(COMPONENTS . "/filemanager/context_menu.json");
@@ -16,14 +28,11 @@ $right_bar = json_decode($right_bar,true);
 
 // Read Components, Plugins, Themes
 $components = Common::readDirectory(COMPONENTS);
-$plugins = Common::readDirectory(PLUGINS);
-$themes = Common::readDirectory(THEMES);
+$plugins    = Common::readDirectory(PLUGINS);
+$themes     = Common::readDirectory(THEMES);
 
 // Theme
-$theme = THEME;
-if(isset($_SESSION['theme'])) {
-  $theme = $_SESSION['theme'];
-}
+$theme = $_SESSION['theme'] ?? THEME;
 
 ?>
 <!doctype html>
@@ -304,17 +313,20 @@ if(isset($_SESSION['theme'])) {
                     // Load Plugins
                     ////////////////////////////////////////////////////////////
                     
-                    foreach ($plugins as $plugin){
-                         if(file_exists(PLUGINS . "/" . $plugin . "/plugin.json")) {
-                            $pdata = file_get_contents(PLUGINS . "/" . $plugin . "/plugin.json");
-                            $pdata = json_decode($pdata,true);
-                            if(isset($pdata[0]['bottombar']))
+                    foreach( $plugins as $plugin )
+                    {
+                         if( file_exists( PLUGINS . "/" . $plugin . "/plugin.json") )
+                         {
+                            $pdata = file_get_contents( PLUGINS . "/" . $plugin . "/plugin.json");
+                            $pdata = json_decode( $pdata, true );
+
+                            if( isset( $pdata[0]['bottombar'] ) )
                             {
-                                foreach($pdata[0]['bottombar'] as $bottommenu)
+                                foreach( $pdata[0]['bottombar'] as $bottommenu )
                                 {
                                     if((!isset($bottommenu['admin']) || ($bottommenu['admin']) && checkAccess()) || !$bottommenu['admin'])
                                     {
-                                        if(isset($bottommenu['action']) && isset($bottommenu['icon']) && isset($bottommenu['title'])) {
+                                        if( isset( $bottommenu['action'], $bottommenu['icon'], $bottommenu['title'] ) ) {
                                             echo '<div class="divider"></div>';
                                             echo '<a onclick="'.$bottommenu['action'].'"><span class="'.$bottommenu['icon'].'"></span>'.$bottommenu['title'].'</a>';
                                         }
@@ -434,19 +446,19 @@ if(isset($_SESSION['theme'])) {
         // LOAD COMPONENTS
         //////////////////////////////////////////////////////////////////
 
-        // JS
-        foreach($components as $component){
+        foreach($components as $component)
+        {
             if(file_exists(COMPONENTS . "/" . $component . "/init.js")){
-                echo '<script src="components/'.$component.'/init.js"></script>"';
+                echo '<script src="components/'.$component.'/init.js"></script>"' . PHP_EOL;
             }
         }
         
-        foreach($plugins as $plugin){
+        foreach($plugins as $plugin)
+        {
             if(file_exists(PLUGINS . "/" . $plugin . "/init.js")){
-                echo '<script src="plugins/'.$plugin.'/init.js"></script>"';
+                echo '<script src="plugins/'.$plugin.'/init.js"></script>"' . PHP_EOL;
             }
         }
-
     }
 
     ?>
